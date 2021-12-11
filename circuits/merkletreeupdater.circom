@@ -1,6 +1,7 @@
 pragma circom 2.0.0;
+include "./tree.circom";
 
-template MerkleTreeUpdater(n_levels, leaves_per_path_level) {
+template parallel MerkleTreeUpdater(n_levels, leaves_per_path_level) {
     signal input identity_path_index[n_levels];
     signal input path_elements[n_levels][leaves_per_path_level];
     signal input identity_commitment;
