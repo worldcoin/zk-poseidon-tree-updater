@@ -22,6 +22,8 @@ npx snarkjs zkey beacon circuit_0002.zkey circuit_final.zkey 0102030405060708090
 
 npx snarkjs zkey export verificationkey circuit_final.zkey verification_key.json
 
+npx snarkjs generateverifier
+
 cp verification_key.json ../zkFiles/verification_key.json
 cp circuit_js/circuit.wasm ../zkFiles/circuit.wasm
 cp circuit_final.zkey ../zkFiles/circuit_final.zkey
