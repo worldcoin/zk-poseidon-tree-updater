@@ -1,15 +1,8 @@
 pragma circom 2.0.0;
 
-include "../node_modules/circomlib/circuits/poseidon.circom";
-include "./tree.circom";
-include "./merkletreeupdater.circom";
-
-template PoseidonTreeUpdate(n_levels) {
-    var LEAVES_PER_NODE = 5;
-    var LEAVES_PER_PATH_LEVEL = LEAVES_PER_NODE - 1;
-
+template MerkleTreeUpdater(n_levels, leaves_per_path_level) {
     signal input identity_path_index[n_levels];
-    signal input path_elements[n_levels][LEAVES_PER_PATH_LEVEL];
+    signal input path_elements[n_levels][leaves_per_path_level];
     signal input identity_commitment;
 
     signal output pre_root;
@@ -21,8 +14,9 @@ template PoseidonTreeUpdate(n_levels) {
     // pre-insertion
     component preInclusionProof = QuinTreeInclusionProof(n_levels);
     preInclusionProof.leaf <== 0; //empty leaf
+
     for (i = 0; i < n_levels; i++) {
-      for (j = 0; j < LEAVES_PER_PATH_LEVEL; j++) {
+      for (j = 0; j < leaves_per_path_level; j++) {
         preInclusionProof.path_elements[i][j] <== path_elements[i][j];
       }
       preInclusionProof.path_index[i] <== identity_path_index[i];
@@ -33,7 +27,7 @@ template PoseidonTreeUpdate(n_levels) {
     component postInclusionProof = QuinTreeInclusionProof(n_levels);
     postInclusionProof.leaf <== identity_commitment;
     for (i = 0; i < n_levels; i++) {
-      for (j = 0; j < LEAVES_PER_PATH_LEVEL; j++) {
+      for (j = 0; j < leaves_per_path_level; j++) {
         postInclusionProof.path_elements[i][j] <== path_elements[i][j];
       }
       postInclusionProof.path_index[i] <== identity_path_index[i];
@@ -41,4 +35,3 @@ template PoseidonTreeUpdate(n_levels) {
     post_root <== postInclusionProof.root;
 }
 
-component main = PoseidonTreeUpdate(10);
