@@ -1,44 +1,39 @@
 pragma circom 2.0.0;
 
 include "../node_modules/circomlib/circuits/poseidon.circom";
-include "./tree.circom";
 include "./merkletreeupdater.circom";
 
-template PoseidonTreeUpdate(n_levels) {
+template PoseidonTreeUpdate(n_levels, batch_size) {
     var LEAVES_PER_NODE = 5;
     var LEAVES_PER_PATH_LEVEL = LEAVES_PER_NODE - 1;
 
-    signal input identity_path_index[n_levels];
-    signal input path_elements[n_levels][LEAVES_PER_PATH_LEVEL];
-    signal input identity_commitment;
+    signal input identity_path_index[batch_size][n_levels];
+    signal input path_elements[batch_size][n_levels][LEAVES_PER_PATH_LEVEL];
+    signal input identity_commitment[batch_size];
 
-    signal output pre_root;
-    signal output post_root;
+    signal output root[batch_size*2];
 
     var i;
     var j;
+    var b;
 
-    // pre-insertion
-    component preInclusionProof = QuinTreeInclusionProof(n_levels);
-    preInclusionProof.leaf <== 0; //empty leaf
-    for (i = 0; i < n_levels; i++) {
-      for (j = 0; j < LEAVES_PER_PATH_LEVEL; j++) {
-        preInclusionProof.path_elements[i][j] <== path_elements[i][j];
-      }
-      preInclusionProof.path_index[i] <== identity_path_index[i];
-    }
-    pre_root <== preInclusionProof.root;
+    component mtu[batch_size];
 
-    // post-insertion
-    component postInclusionProof = QuinTreeInclusionProof(n_levels);
-    postInclusionProof.leaf <== identity_commitment;
-    for (i = 0; i < n_levels; i++) {
-      for (j = 0; j < LEAVES_PER_PATH_LEVEL; j++) {
-        postInclusionProof.path_elements[i][j] <== path_elements[i][j];
-      }
-      postInclusionProof.path_index[i] <== identity_path_index[i];
+    for (b=0; b<batch_size; b++){
+        mtu[b] = MerkleTreeUpdater(n_levels, LEAVES_PER_PATH_LEVEL);
+        mtu[b].identity_commitment <== identity_commitment[b];
+
+        for (i = 0; i < n_levels; i++) {
+            for (j = 0; j < LEAVES_PER_PATH_LEVEL; j++) {
+                mtu[b].path_elements[i][j] <== path_elements[b][i][j];
+            }
+            mtu[b].identity_path_index[i] <== identity_path_index[b][i];
+        }
+        
+        // verify pre and post roots
+        root[b * 2] <== mtu[b].pre_root;
+        root[b * 2 + 1] <== mtu[b].post_root;
     }
-    post_root <== postInclusionProof.root;
 }
 
-component main = PoseidonTreeUpdate(10);
+component main = PoseidonTreeUpdate(10, 2);
