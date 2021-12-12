@@ -9,31 +9,32 @@ template PoseidonTreeUpdate(n_levels, batch_size) {
 
     signal input identity_path_index[batch_size][n_levels];
     signal input path_elements[batch_size][n_levels][LEAVES_PER_PATH_LEVEL];
+    signal input roots[batch_size + 1];
     signal input identity_commitment[batch_size];
 
-    signal output root[batch_size*2];
-
-    var i;
-    var j;
-    var b;
+    signal output pre_root;
+    signal output post_root;
 
     component mtu[batch_size];
 
-    for (b=0; b<batch_size; b++){
+    for (var b=0; b < batch_size; b++){
         mtu[b] = MerkleTreeUpdater(n_levels, LEAVES_PER_PATH_LEVEL);
         mtu[b].identity_commitment <== identity_commitment[b];
 
-        for (i = 0; i < n_levels; i++) {
-            for (j = 0; j < LEAVES_PER_PATH_LEVEL; j++) {
+        for (var i = 0; i < n_levels; i++) {
+            for (var j = 0; j < LEAVES_PER_PATH_LEVEL; j++) {
                 mtu[b].path_elements[i][j] <== path_elements[b][i][j];
             }
             mtu[b].identity_path_index[i] <== identity_path_index[b][i];
         }
         
         // verify pre and post roots
-        root[b * 2] <== mtu[b].pre_root;
-        root[b * 2 + 1] <== mtu[b].post_root;
+        roots[b] === mtu[b].pre_root;
+        roots[b + 1] === mtu[b].post_root;
     }
+
+    pre_root <== roots[0];
+    post_root <== roots[batch_size];
 }
 
-component main = PoseidonTreeUpdate(10, 2);
+component main {public [identity_commitment]} = PoseidonTreeUpdate(10, 2);
