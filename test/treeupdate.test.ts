@@ -10,12 +10,13 @@ import * as path from "path";
 jest.setTimeout(30*1000);
 
 const BATCH_SIZE = 2;
+const TREE_DEPTH = 10;
 const ZERO_VALUE = BigInt(0)
 
 describe('Proof test', () => {
     it("Should create proof", async () => {
         const commitments = []
-        const premerkleProof: MerkleProof = generateMerkleProof(10, ZERO_VALUE, 5, [ZERO_VALUE], ZERO_VALUE)
+        const premerkleProof: MerkleProof = generateMerkleProof(TREE_DEPTH, ZERO_VALUE, 5, [ZERO_VALUE], ZERO_VALUE)
 
         // const tmpproof: MerkleProof = generateMerkleProof(3, ZERO_VALUE, 2, [ZERO_VALUE], ZERO_VALUE);
         // console.log(tmpproof.pathElements);
@@ -30,7 +31,7 @@ describe('Proof test', () => {
             const id_comm = identity.genIdentityCommitment();
     
             commitments.push(id_comm)
-            const postmerkleProof: MerkleProof = generateMerkleProof(10, ZERO_VALUE, 5, commitments, id_comm)
+            const postmerkleProof: MerkleProof = generateMerkleProof(TREE_DEPTH, ZERO_VALUE, 5, commitments, id_comm)
     
             identity_path_index.push(postmerkleProof.indices)
             path_elements.push(postmerkleProof.pathElements)
@@ -38,11 +39,12 @@ describe('Proof test', () => {
             roots.push(postmerkleProof.root)
         }
 
+        const start_leaf_idx = 0;
         const pre_root = roots[0];
         const post_root = roots[roots.length - 1];
 
         const grothInput = {
-            identity_path_index,
+            start_leaf_idx,
             path_elements,
             roots,
             identity_commitment,
@@ -57,6 +59,7 @@ describe('Proof test', () => {
         const fullProof = await genProof(grothInput, wasmFilePath, finalZkeyPath);
 
         let input = "0x";
+        input += BigInt(0).toString(16).padStart(8, "0");
         input += BigInt(roots[0]).toString(16).padStart(64, "0");
         input += BigInt(roots[roots.length - 1]).toString(16).padStart(64, "0");
 
