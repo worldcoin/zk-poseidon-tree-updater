@@ -3,8 +3,11 @@ const { ZkIdentity } = require("@libsem/identity");
 
 import { MerkleProof } from "@libsem/types"
 import { genProof, verifyProof } from "../src";
+import * as ethers from "ethers";
 import * as fs from "fs";
 import * as path from "path";
+
+jest.setTimeout(30*1000);
 
 const BATCH_SIZE = 2;
 const ZERO_VALUE = BigInt(0)
@@ -13,6 +16,9 @@ describe('Proof test', () => {
     it("Should create proof", async () => {
         const commitments = []
         const premerkleProof: MerkleProof = generateMerkleProof(10, ZERO_VALUE, 5, [ZERO_VALUE], ZERO_VALUE)
+
+        // const tmpproof: MerkleProof = generateMerkleProof(3, ZERO_VALUE, 2, [ZERO_VALUE], ZERO_VALUE);
+        // console.log(tmpproof.pathElements);
         
         const identity_path_index = [];
         const path_elements = [];
@@ -32,11 +38,16 @@ describe('Proof test', () => {
             roots.push(postmerkleProof.root)
         }
 
+        const pre_root = roots[0];
+        const post_root = roots[roots.length - 1];
+
         const grothInput = {
             identity_path_index,
             path_elements,
             roots,
-            identity_commitment
+            identity_commitment,
+            pre_root,
+            post_root
         };
 
         const wasmFilePath: string = path.join("./zkFiles", "circuit.wasm")
@@ -44,7 +55,19 @@ describe('Proof test', () => {
         const vkeyPath = path.join("./zkFiles", "verification_key.json")
 
         const fullProof = await genProof(grothInput, wasmFilePath, finalZkeyPath);
-        fullProof.publicSignals = [roots[0], roots[roots.length - 1], ...identity_commitment]
+
+        let input = "0x";
+        input += BigInt(roots[0]).toString(16).padStart(64, "0");
+        input += BigInt(roots[roots.length - 1]).toString(16).padStart(64, "0");
+
+        for (let id of identity_commitment) {
+            input += BigInt(id).toString(16).padStart(64, "0");
+        }
+
+        const hashed_inputs = ethers.utils.sha256(input);
+        const bi_hashed_inputs = BigInt(hashed_inputs).toString(10);
+
+        fullProof.publicSignals = [bi_hashed_inputs]
         const vKey = JSON.parse(fs.readFileSync(vkeyPath, "utf-8"))
         const res = await verifyProof(vKey, fullProof);
         expect(res).toBe(true)
