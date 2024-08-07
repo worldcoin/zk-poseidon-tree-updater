@@ -19,7 +19,7 @@
     "circomlib": "^2.0.1",
     "circomlibjs": "^0.0.8",
     "ethers": "^5.5.2",
-    "ffjavascript": "^0.2.39",
+    "ffjavascript": "^0.2.56",
     "isomorphic-fetch": "^3.0.0",
     "serve": "^13.0.2",
     "snarkjs": "^0.4.10",
