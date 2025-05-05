@@ -17,7 +17,7 @@
     "@libsem/identity": "^1.0.19",
     "@libsem/protocols": "^1.0.25",
     "circomlib": "^2.0.1",
-    "circomlibjs": "^0.0.8",
+    "circomlibjs": "^0.1.0",
     "ethers": "^5.5.2",
     "ffjavascript": "^0.2.39",
     "isomorphic-fetch": "^3.0.0",
